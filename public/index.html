@@ -8,6 +8,103 @@
   <meta name="theme-color" content="#080808"/>
   <link rel="manifest" href="/manifest.json"/>
   <title>Gabriel Brain</title>
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { getFirestore, doc, setDoc, onSnapshot }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAOxPq8ZJbBOXmvxQY5jd0TZUGkg0amk9g",
+      authDomain: "gabriel-brain.firebaseapp.com",
+      projectId: "gabriel-brain",
+      storageBucket: "gabriel-brain.firebasestorage.app",
+      messagingSenderId: "798861007545",
+      appId: "1:798861007545:web:3c30b4ab4eeefafedf5968"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+    let uid = null;
+    let unsubSnap = null;
+    let syncTimer = null;
+
+    // Firestore → localStorage → UI
+    function startSync(userId) {
+      uid = userId;
+      if (unsubSnap) unsubSnap();
+      const ref = doc(db, 'users', uid);
+      unsubSnap = onSnapshot(ref, snap => {
+        if (!snap.exists()) return;
+        const d = snap.data();
+        if (d.gb_data)    localStorage.setItem('gb_data',    d.gb_data);
+        if (d.gb_tasks)   localStorage.setItem('gb_tasks',   d.gb_tasks);
+        if (d.gb_history) localStorage.setItem('gb_history', d.gb_history);
+        if (window._gbReady) {
+          window.renderTasks && window.renderTasks();
+          const cur = window._currentTab;
+          if (cur && window.SECTIONS && window.SECTIONS.find(s => s.id === cur)) {
+            window.renderExplorer && window.renderExplorer(cur);
+          }
+        }
+      });
+    }
+
+    // localStorage → Firestore (debounced 1.5s)
+    window.syncToFirestore = function() {
+      if (!uid) return;
+      clearTimeout(syncTimer);
+      syncTimer = setTimeout(async () => {
+        try {
+          await setDoc(doc(db, 'users', uid), {
+            gb_data:    localStorage.getItem('gb_data')    || '{}',
+            gb_tasks:   localStorage.getItem('gb_tasks')   || '[]',
+            gb_history: localStorage.getItem('gb_history') || '[]',
+            updated:    new Date().toISOString()
+          }, { merge: true });
+        } catch(e) { console.error('Sync error', e); }
+      }, 1500);
+    };
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app-root').style.display     = 'flex';
+        document.getElementById('user-avatar').src            = user.photoURL || '';
+        document.getElementById('user-name').textContent      = user.displayName?.split(' ')[0] || 'Gabriel';
+        startSync(user.uid);
+        window._gbReady = true;
+        window.renderTasks && window.renderTasks();
+      } else {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('app-root').style.display     = 'none';
+        uid = null;
+        window._gbReady = false;
+        if (unsubSnap) { unsubSnap(); unsubSnap = null; }
+      }
+    });
+
+    window.doGoogleLogin = async function() {
+      const btn = document.getElementById('login-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span>Entrando...</span>';
+      try {
+        await signInWithPopup(auth, new GoogleAuthProvider());
+      } catch(e) {
+        btn.disabled = false;
+        btn.innerHTML = '<img class="gicon" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/> Entrar com Google';
+        if (e.code !== 'auth/popup-closed-by-user') alert('Erro: ' + e.message);
+      }
+    };
+
+    window.doLogout = async function() {
+      if (!confirm('Sair da conta?')) return;
+      await signOut(auth);
+    };
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
@@ -195,15 +292,41 @@
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .toast.ok{color:var(--green)}.toast.err{color:var(--red)}
     .hidden{display:none!important}
+
+    /* LOGIN */
+    #login-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:999;padding:40px}
+    .lg-logo{width:68px;height:68px;border-radius:18px;background:var(--accent);display:grid;place-items:center;font-size:30px;margin-bottom:4px}
+    .lg-title{font-size:24px;font-weight:600;letter-spacing:-.4px}
+    .lg-sub{font-size:14px;color:var(--text2);text-align:center;max-width:240px;line-height:1.5}
+    #login-btn{display:flex;align-items:center;gap:10px;padding:13px 22px;border-radius:12px;background:#fff;color:#111;border:none;font-size:15px;font-weight:600;font-family:var(--font);cursor:pointer;transition:opacity .15s;margin-top:8px}
+    #login-btn:hover{opacity:.9}
+    #login-btn:disabled{opacity:.5;cursor:not-allowed}
+    .gicon{width:20px;height:20px}
+    #user-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid var(--border2);cursor:pointer;flex-shrink:0}
+    #app-root{display:none;flex-direction:column;height:100%;width:100%}
+
   </style>
 </head>
 <body>
+
+<div id="login-screen">
+  <div class="lg-logo">g</div>
+  <div class="lg-title">Gabriel Brain</div>
+  <div class="lg-sub">Seu segundo cérebro pessoal. Faça login para sincronizar em todos os dispositivos.</div>
+  <button id="login-btn" onclick="doGoogleLogin()">
+    <img class="gicon" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/>
+    Entrar com Google
+  </button>
+</div>
+<div id="app-root">
 
 <!-- HEADER -->
 <header class="header">
   <div class="logo"><div class="sdot"></div>Gabriel Brain</div>
   <div class="hright">
     <button class="hbtn" onclick="openModal('modal-new')">＋ Novo</button>
+    <img id="user-avatar" src="" onclick="doLogout()" title="Sair da conta"/>
+    <span id="user-name" style="font-size:13px;color:var(--text2)"></span>
   </div>
 </header>
 
@@ -367,13 +490,13 @@ const SECTIONS = [
 // Structure: { [sectionId]: { folders: [{id, name, icon, files:[{id,title,body,created,updated}]}] } }
 const DB = {
   getData: () => { try{return JSON.parse(localStorage.getItem('gb_data')||'{}')}catch{return{}} },
-  saveData: v => localStorage.setItem('gb_data', JSON.stringify(v)),
+  saveData: v => { localStorage.setItem('gb_data', JSON.stringify(v)); window.syncToFirestore && window.syncToFirestore(); },
   getSection: sid => { const d=DB.getData(); if(!d[sid]) d[sid]={folders:[]}; return d[sid]; },
   saveSection: (sid,v) => { const d=DB.getData(); d[sid]=v; DB.saveData(d); },
   getTasks: () => { try{return JSON.parse(localStorage.getItem('gb_tasks')||'[]')}catch{return[]} },
-  saveTasks: v => localStorage.setItem('gb_tasks', JSON.stringify(v)),
+  saveTasks: v => { localStorage.setItem('gb_tasks', JSON.stringify(v)); window.syncToFirestore && window.syncToFirestore(); },
   getHistory: () => { try{return JSON.parse(localStorage.getItem('gb_history')||'[]')}catch{return[]} },
-  saveHistory: v => localStorage.setItem('gb_history', JSON.stringify(v.slice(-100))),
+  saveHistory: v => { localStorage.setItem('gb_history', JSON.stringify(v.slice(-100))); window.syncToFirestore && window.syncToFirestore(); },
   getCtx() {
     const tasks = this.getTasks().filter(t=>!t.done).slice(0,8).map(t=>`- [${t.pri}] ${t.text}`).join('\n');
     let notes = '';
@@ -401,7 +524,7 @@ SECTIONS.forEach(s => { openFolders[s.id] = new Set(); });
 // ── TABS ──
 const ALL_TABS = ['chat','projetos','saude','diario','tarefas','notas','ideias','bugs','rotinas','recursos','export'];
 function setTab(t) {
-  currentTab = t;
+  currentTab = t; window._currentTab = t;
   ALL_TABS.forEach(x => {
     document.getElementById('view-'+x)?.classList.toggle('active', x===t);
     document.getElementById('tab-'+x)?.classList.toggle('active', x===t);
@@ -802,7 +925,12 @@ if(window.visualViewport){
 }
 
 // ── INIT ──
+window.renderTasks    = renderTasks;
+window.renderExplorer = renderExplorer;
+window.SECTIONS       = SECTIONS;
+window._currentTab    = currentTab;
 renderTasks();
 </script>
+</div><!-- /app-root -->
 </body>
 </html>
