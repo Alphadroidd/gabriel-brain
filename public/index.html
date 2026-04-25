@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="theme-color" content="#080808"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <title>Gabriel Brain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:#080808; --bg2:#111; --bg3:#1a1a1a; --bg4:#222;
+      --border:rgba(255,255,255,.06); --border2:rgba(255,255,255,.12);
+      --text:#ececec; --text2:#777; --text3:#3a3a3a;
+      --green:#4ade80; --accent:#6366f1; --amber:#fbbf24; --red:#f87171; --blue:#60a5fa;
+      --font:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+      --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased;overflow:hidden}
+    body{display:flex;flex-direction:column;position:fixed;inset:0}
+
+    /* HEADER */
+    .header{display:flex;align-items:center;justify-content:space-between;padding:calc(var(--st)+10px) 16px 10px;flex-shrink:0}
+    .logo{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600;letter-spacing:-.3px}
+    .sdot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 3s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}
+    .hright{display:flex;gap:7px}
+    .hbtn{height:30px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:5px;padding:0 12px;font-size:12.5px;font-family:var(--font);transition:background .15s,color .15s}
+    .hbtn:hover{background:rgba(255,255,255,.1);color:var(--text)}
+
+    /* TABS */
+    .tabs-wrap{padding:0 12px 8px;flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+    .tabs-wrap::-webkit-scrollbar{display:none}
+    .tabs{display:flex;gap:5px;width:max-content}
+    .tab{display:flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid var(--border);font-size:12.5px;font-weight:500;color:var(--text2);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s;user-select:none}
+    .tab:hover{background:rgba(255,255,255,.08);color:var(--text)}
+    .tab.active{background:rgba(255,255,255,.1);border-color:var(--border2);color:var(--text)}
+    .tbadge{background:var(--accent);color:#fff;font-size:10px;font-family:var(--mono);padding:1px 5px;border-radius:8px;line-height:1.4}
+
+    /* CONTENT */
+    .content{flex:1;overflow:hidden;position:relative}
+    .view{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .12s}
+    .view.active{opacity:1;pointer-events:all}
+
+    /* ── CHAT ── */
+    .messages{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin;scrollbar-color:var(--bg3) transparent}
+    .msg{display:flex;gap:10px;align-items:flex-start}
+    .msg.user{flex-direction:row-reverse}
+    .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:600;flex-shrink:0;font-family:var(--mono)}
+    .av.user{background:var(--accent);color:#fff}
+    .av.bot{background:var(--bg3);border:1px solid var(--border2);color:var(--text2)}
+    .msg-body{display:flex;flex-direction:column;gap:3px;max-width:78%}
+    .msg.user .msg-body{align-items:flex-end}
+    .bubble{padding:9px 13px;border-radius:14px;font-size:13.5px;line-height:1.55;word-break:break-word}
+    .msg.user .bubble{background:var(--accent);color:#fff;border-bottom-right-radius:3px}
+    .msg.bot .bubble{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:3px}
+    .bubble strong{font-weight:600}
+    .bubble code{font-family:var(--mono);font-size:11.5px;background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px}
+    .ts{font-size:10px;color:var(--text3);font-family:var(--mono);padding:0 2px}
+    .typing-indicator{display:flex;gap:4px;align-items:center;padding:2px 0}
+    .typing-indicator span{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:bounce 1.2s ease-in-out infinite}
+    .typing-indicator span:nth-child(2){animation-delay:.15s}
+    .typing-indicator span:nth-child(3){animation-delay:.3s}
+    @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+    .chat-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px 20px}
+    .chat-empty-icon{width:52px;height:52px;border-radius:50%;border:1px solid var(--border2);display:grid;place-items:center;font-size:20px;color:var(--text3)}
+    .chat-empty-title{font-size:19px;font-weight:600;letter-spacing:-.3px}
+    .chat-empty-sub{font-size:13px;color:var(--text2);text-align:center;max-width:240px;line-height:1.5}
+    .suggestions{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:6px;max-width:320px}
+    .suggestion{padding:6px 12px;border-radius:18px;background:var(--bg2);border:1px solid var(--border);font-size:12.5px;color:var(--text2);cursor:pointer;transition:background .15s,color .15s}
+    .suggestion:hover{background:var(--bg3);color:var(--text)}
+    .input-bar{flex-shrink:0;padding:8px 14px calc(var(--sb)+8px);border-top:1px solid var(--border);background:var(--bg)}
+    .input-row{display:flex;align-items:flex-end;gap:8px;background:var(--bg2);border:1px solid var(--border2);border-radius:18px;padding:7px 7px 7px 14px}
+    textarea{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:var(--font);font-size:13.5px;resize:none;line-height:1.5;max-height:100px;overflow-y:auto}
+    textarea::placeholder{color:var(--text3)}
+    .send-btn{width:32px;height:32px;border-radius:50%;background:var(--accent);border:none;color:#fff;cursor:pointer;display:grid;place-items:center;flex-shrink:0;transition:opacity .15s,transform .1s}
+    .send-btn:disabled{opacity:.35}
+    .send-btn:active{transform:scale(.9)}
+    .send-btn svg{width:14px;height:14px;fill:currentColor}
+
+    /* ── FILE EXPLORER (used by all sections) ── */
+    .explorer{flex:1;display:flex;overflow:hidden}
+
+    /* LEFT PANEL - folders */
+    .exp-left{width:200px;flex-shrink:0;border-right:1px solid var(--border);overflow-y:auto;padding:8px;scrollbar-width:thin;scrollbar-color:var(--bg3) transparent}
+    .exp-left::-webkit-scrollbar{width:3px}
+
+    .folder-item{margin-bottom:1px}
+    .folder-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text2);transition:background .12s,color .12s;user-select:none}
+    .folder-row:hover{background:var(--bg3);color:var(--text)}
+    .folder-row.sel{background:var(--bg3);color:var(--text)}
+    .farrow{font-size:9px;transition:transform .15s;color:var(--text3);width:10px;text-align:center;flex-shrink:0}
+    .farrow.open{transform:rotate(90deg)}
+    .ficon{font-size:13px;flex-shrink:0}
+    .fname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+    .fcount{font-size:10px;font-family:var(--mono);color:var(--text3)}
+
+    .subfolder-children{padding-left:16px}
+    .subfolder-children.closed{display:none}
+
+    .file-item{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;cursor:pointer;font-size:12.5px;color:var(--text2);transition:background .12s,color .12s}
+    .file-item:hover{background:var(--bg3);color:var(--text)}
+    .file-item.sel{background:var(--accent);color:#fff}
+    .file-icon{font-size:11px;flex-shrink:0;opacity:.6}
+    .file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+    .new-folder-btn,.new-file-btn{display:flex;align-items:center;gap:5px;padding:5px 8px;border-radius:7px;cursor:pointer;font-size:12px;color:var(--text3);transition:color .12s;width:100%;border:none;background:none;font-family:var(--font);text-align:left}
+    .new-folder-btn:hover,.new-file-btn:hover{color:var(--text2)}
+
+    /* RIGHT PANEL - editor */
+    .exp-right{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+    .editor-top{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .editor-breadcrumb{font-size:11.5px;color:var(--text2);font-family:var(--mono);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .editor-actions{display:flex;gap:6px}
+    .ebtn{height:26px;padding:0 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-family:var(--font);cursor:pointer;transition:background .12s,color .12s}
+    .ebtn:hover{background:var(--bg4);color:var(--text)}
+    .ebtn.danger{color:var(--red);border-color:rgba(248,113,113,.2)}
+    .editor-title{width:100%;background:none;border:none;outline:none;color:var(--text);font-family:var(--font);font-size:19px;font-weight:600;padding:12px 16px 6px;letter-spacing:-.3px}
+    .editor-title::placeholder{color:var(--text3)}
+    .editor-body{flex:1;width:100%;background:none;border:none;outline:none;resize:none;color:var(--text);font-family:var(--font);font-size:13.5px;line-height:1.7;padding:4px 16px 40px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--bg3) transparent}
+    .editor-body::placeholder{color:var(--text3)}
+    .editor-meta{padding:7px 16px;font-size:10.5px;color:var(--text3);font-family:var(--mono);border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:14px}
+
+    .exp-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px;color:var(--text3)}
+    .exp-empty-icon{font-size:32px;margin-bottom:4px}
+    .exp-empty-title{font-size:15px;font-weight:500;color:var(--text2)}
+    .exp-empty-sub{font-size:12.5px;text-align:center;max-width:200px;line-height:1.5}
+
+    /* ── TASKS ── */
+    .tasks-wrap{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--bg3) transparent}
+    .task-group{border-bottom:1px solid var(--border)}
+    .tg-header{display:flex;align-items:center;gap:8px;padding:9px 16px;cursor:pointer;font-size:10.5px;font-family:var(--mono);color:var(--text3);letter-spacing:.7px;text-transform:uppercase;user-select:none}
+    .tg-header:hover{color:var(--text2)}
+    .tg-arrow{font-size:9px;transition:transform .15s}
+    .tg-arrow.open{transform:rotate(90deg)}
+    .tg-count{margin-left:auto;background:var(--bg3);padding:1px 6px;border-radius:8px;font-size:10px}
+    .tg-body{display:flex;flex-direction:column}
+    .tg-body.closed{display:none}
+    .task-item{display:flex;align-items:flex-start;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+    .task-item:hover{background:var(--bg2)}
+    .task-item:last-child{border-bottom:none}
+    .tcheck{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;margin-top:2px;display:grid;place-items:center;transition:background .15s,border-color .15s}
+    .task-item.done .tcheck{background:var(--green);border-color:var(--green)}
+    .task-item.done .tcheck::after{content:'✓';font-size:9px;color:#000;font-weight:700}
+    .pdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+    .pdot.high{background:var(--red)}.pdot.med{background:var(--amber)}.pdot.low{background:var(--bg4);border:1px solid var(--bg4)}
+    .tinfo{flex:1;min-width:0}
+    .ttext{font-size:13.5px;line-height:1.4}
+    .task-item.done .ttext{text-decoration:line-through;color:var(--text2)}
+    .tmeta{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+    .task-input-bar{flex-shrink:0;padding:8px 14px calc(var(--sb)+8px);border-top:1px solid var(--border);background:var(--bg);display:flex;gap:8px;align-items:center}
+    .task-inp{flex:1;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:8px 12px;color:var(--text);font-family:var(--font);font-size:13.5px;outline:none;transition:border-color .15s}
+    .task-inp:focus{border-color:var(--accent)}
+    .task-inp::placeholder{color:var(--text3)}
+    .pri-btns{display:flex;gap:4px}
+    .pdotbtn{width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:border-color .15s}
+    .pdotbtn.high{background:var(--red)}.pdotbtn.med{background:var(--amber)}.pdotbtn.low{background:var(--bg4);border-color:var(--border2)}
+    .pdotbtn.sel{border-color:#fff}
+    .tadd-btn{width:30px;height:30px;border-radius:50%;background:var(--accent);border:none;color:#fff;cursor:pointer;font-size:18px;display:grid;place-items:center;flex-shrink:0}
+
+    /* ── EXPORT ── */
+    .scroll-pad{flex:1;overflow-y:auto;padding:16px;scrollbar-width:thin;scrollbar-color:var(--bg3) transparent}
+    .slabel{font-size:10.5px;font-family:var(--mono);color:var(--text3);letter-spacing:.8px;text-transform:uppercase;margin:18px 0 8px}
+    .slabel:first-child{margin-top:0}
+    .acard{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;transition:border-color .15s}
+    .acard:hover{border-color:var(--border2)}
+    .acard-title{font-size:14px;font-weight:600;margin-bottom:2px}
+    .acard-sub{font-size:12.5px;color:var(--text2)}
+    .acard-icon{font-size:20px}
+
+    /* ── MODALS ── */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s}
+    .overlay.show{opacity:1;pointer-events:all}
+    .modal{background:var(--bg2);border:1px solid var(--border2);border-radius:18px 18px 0 0;padding:18px 18px calc(var(--sb)+18px);width:100%;transform:translateY(16px);transition:transform .2s}
+    .overlay.show .modal{transform:translateY(0)}
+    .mhandle{width:32px;height:3px;border-radius:2px;background:var(--border2);margin:0 auto 14px}
+    .mtitle{font-size:15px;font-weight:600;margin-bottom:12px}
+    .minput{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:9px 12px;color:var(--text);font-family:var(--font);font-size:13.5px;outline:none;margin-bottom:8px;transition:border-color .15s}
+    .minput:focus{border-color:var(--border2)}
+    .mtextarea{min-height:80px;resize:none}
+    .mactions{display:flex;gap:7px;margin-top:4px}
+    .mcancel{flex:1;padding:11px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-family:var(--font);font-size:13.5px;cursor:pointer}
+    .msave{flex:2;padding:11px;border-radius:10px;background:var(--text);border:none;color:var(--bg);font-family:var(--font);font-size:13.5px;font-weight:600;cursor:pointer}
+    .msave:hover{opacity:.88}
+    .icon-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+    .icon-pill{padding:5px 11px;border-radius:14px;background:var(--bg3);border:1px solid var(--border);font-size:13px;cursor:pointer;transition:background .12s}
+    .icon-pill.sel{background:var(--accent);border-color:var(--accent)}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:calc(var(--sb)+20px);left:50%;transform:translateX(-50%) translateY(8px);background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:8px 16px;border-radius:18px;font-size:12.5px;font-family:var(--mono);z-index:200;opacity:0;transition:opacity .2s,transform .2s;white-space:nowrap;pointer-events:none}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .toast.ok{color:var(--green)}.toast.err{color:var(--red)}
+    .hidden{display:none!important}
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo"><div class="sdot"></div>Gabriel Brain</div>
+  <div class="hright">
+    <button class="hbtn" onclick="openModal('modal-new')">＋ Novo</button>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <div class="tabs">
+    <div class="tab active" id="tab-chat"      onclick="setTab('chat')">💬 Chat</div>
+    <div class="tab"        id="tab-projetos"  onclick="setTab('projetos')">🚀 Projetos</div>
+    <div class="tab"        id="tab-saude"     onclick="setTab('saude')">🧠 Saúde Mental</div>
+    <div class="tab"        id="tab-diario"    onclick="setTab('diario')">📖 Diário</div>
+    <div class="tab"        id="tab-tarefas"   onclick="setTab('tarefas')">✓ Tarefas <span class="tbadge" id="tbadge">0</span></div>
+    <div class="tab"        id="tab-notas"     onclick="setTab('notas')">📝 Notas</div>
+    <div class="tab"        id="tab-ideias"    onclick="setTab('ideias')">💡 Ideias</div>
+    <div class="tab"        id="tab-bugs"      onclick="setTab('bugs')">🐛 Bugs</div>
+    <div class="tab"        id="tab-rotinas"   onclick="setTab('rotinas')">⏰ Rotinas</div>
+    <div class="tab"        id="tab-recursos"  onclick="setTab('recursos')">📦 Recursos</div>
+    <div class="tab"        id="tab-export"    onclick="setTab('export')">⬆︎ Export</div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- CHAT -->
+  <div class="view active" id="view-chat">
+    <div class="messages" id="messages">
+      <div class="chat-empty" id="chat-empty">
+        <div class="chat-empty-icon">g</div>
+        <div class="chat-empty-title">Olá, Gabriel</div>
+        <div class="chat-empty-sub">Seu segundo cérebro está conectado. O que você precisa?</div>
+        <div class="suggestions">
+          <div class="suggestion" onclick="quickSend('O que tenho pendente hoje?')">📅 Pendências</div>
+          <div class="suggestion" onclick="quickSend('Me ajuda a organizar meu dia')">🗓 Organizar dia</div>
+          <div class="suggestion" onclick="quickSend('Como estão meus projetos?')">🚀 Projetos</div>
+          <div class="suggestion" onclick="quickSend('Quero fazer uma reflexão rápida')">💭 Reflexão</div>
+        </div>
+      </div>
+    </div>
+    <div class="input-bar">
+      <div class="input-row">
+        <textarea id="inp" placeholder="Escreva algo..." rows="1" onkeydown="handleKey(event)" oninput="resizeTA(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMsg()">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION VIEWS (explorador por seção) -->
+  <div class="view" id="view-projetos">  <div class="explorer" id="exp-projetos"></div></div>
+  <div class="view" id="view-saude">     <div class="explorer" id="exp-saude"></div></div>
+  <div class="view" id="view-diario">    <div class="explorer" id="exp-diario"></div></div>
+  <div class="view" id="view-notas">     <div class="explorer" id="exp-notas"></div></div>
+  <div class="view" id="view-ideias">    <div class="explorer" id="exp-ideias"></div></div>
+  <div class="view" id="view-bugs">      <div class="explorer" id="exp-bugs"></div></div>
+  <div class="view" id="view-rotinas">   <div class="explorer" id="exp-rotinas"></div></div>
+  <div class="view" id="view-recursos">  <div class="explorer" id="exp-recursos"></div></div>
+
+  <!-- TAREFAS -->
+  <div class="view" id="view-tarefas">
+    <div class="tasks-wrap" id="tasks-wrap"></div>
+    <div class="task-input-bar">
+      <input class="task-inp" id="tinp" placeholder="Nova tarefa..." onkeydown="if(event.key==='Enter')addTask()"/>
+      <div class="pri-btns">
+        <div class="pdotbtn low sel" id="pl" onclick="selP('low')"></div>
+        <div class="pdotbtn med"     id="pm" onclick="selP('med')"></div>
+        <div class="pdotbtn high"    id="ph" onclick="selP('high')"></div>
+      </div>
+      <button class="tadd-btn" onclick="addTask()">＋</button>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="view" id="view-export">
+    <div class="scroll-pad">
+      <div class="slabel">Exportar</div>
+      <div class="acard" onclick="exportMD()"><div><div class="acard-title">Export para Obsidian</div><div class="acard-sub">Gera arquivo .md com tudo</div></div><div class="acard-icon">⬇︎</div></div>
+      <div class="acard" onclick="exportJSON()"><div><div class="acard-title">Backup JSON</div><div class="acard-sub">Backup completo de todos os dados</div></div><div class="acard-icon">💾</div></div>
+      <div class="slabel">Importar</div>
+      <div class="acard" onclick="document.getElementById('impfile').click()"><div><div class="acard-title">Importar backup JSON</div><div class="acard-sub">Restaura dados de um backup anterior</div></div><div class="acard-icon">⬆︎</div></div>
+      <input type="file" id="impfile" accept=".json" class="hidden" onchange="importJSON(event)"/>
+      <div class="slabel">Danger zone</div>
+      <div class="acard" onclick="clearAll()" style="border-color:rgba(248,113,113,.15)"><div><div class="acard-title" style="color:var(--red)">Limpar todos os dados</div><div class="acard-sub">Remove tudo do localStorage</div></div><div class="acard-icon">🗑</div></div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- MODALS -->
+<div class="overlay" id="modal-new" onclick="closeOut(event,'modal-new')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Criar novo</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="msave" style="flex:none;padding:13px" onclick="closeModal('modal-new');openModal('modal-folder')">📁 Nova pasta / subseção</button>
+      <button class="msave" style="flex:none;padding:13px;background:var(--bg3);color:var(--text)" onclick="closeModal('modal-new');openModal('modal-file')">📝 Novo arquivo</button>
+      <button class="mcancel" onclick="closeModal('modal-new')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-folder" onclick="closeOut(event,'modal-folder')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Nova pasta</div>
+    <div class="icon-pills" id="folder-icons">
+      <div class="icon-pill sel" onclick="setFIcon(this,'📁')">📁</div>
+      <div class="icon-pill" onclick="setFIcon(this,'🚀')">🚀</div>
+      <div class="icon-pill" onclick="setFIcon(this,'💡')">💡</div>
+      <div class="icon-pill" onclick="setFIcon(this,'📖')">📖</div>
+      <div class="icon-pill" onclick="setFIcon(this,'🧠')">🧠</div>
+      <div class="icon-pill" onclick="setFIcon(this,'🐛')">🐛</div>
+      <div class="icon-pill" onclick="setFIcon(this,'⏰')">⏰</div>
+      <div class="icon-pill" onclick="setFIcon(this,'📦')">📦</div>
+      <div class="icon-pill" onclick="setFIcon(this,'🗂️')">🗂️</div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px">Seção de destino</div>
+    <select class="minput" id="folder-section-sel" style="appearance:auto;cursor:pointer"></select>
+    <input class="minput" id="folder-name-inp" placeholder="Nome da pasta" type="text" onkeydown="if(event.key==='Enter')saveFolder()"/>
+    <div class="mactions">
+      <button class="mcancel" onclick="closeModal('modal-folder')">Cancelar</button>
+      <button class="msave" onclick="saveFolder()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-file" onclick="closeOut(event,'modal-file')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Novo arquivo</div>
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">Destino</div>
+    <select class="minput" id="file-section-sel" style="appearance:auto;cursor:pointer" onchange="populateFileFolderSel()"></select>
+    <select class="minput" id="file-folder-sel" style="appearance:auto;cursor:pointer"></select>
+    <input class="minput" id="file-title-inp" placeholder="Título" type="text" onkeydown="if(event.key==='Enter')saveFile()"/>
+    <textarea class="minput mtextarea" id="file-body-inp" placeholder="Conteúdo..."></textarea>
+    <div class="mactions">
+      <button class="mcancel" onclick="closeModal('modal-file')">Cancelar</button>
+      <button class="msave" onclick="saveFile()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/chat';
+
+// ── SECTIONS CONFIG ──
+const SECTIONS = [
+  {id:'projetos', label:'🚀 Projetos'},
+  {id:'saude',    label:'🧠 Saúde Mental'},
+  {id:'diario',   label:'📖 Diário'},
+  {id:'notas',    label:'📝 Notas'},
+  {id:'ideias',   label:'💡 Ideias'},
+  {id:'bugs',     label:'🐛 Bugs'},
+  {id:'rotinas',  label:'⏰ Rotinas'},
+  {id:'recursos', label:'📦 Recursos'},
+];
+
+// ── DB ──
+// Structure: { [sectionId]: { folders: [{id, name, icon, files:[{id,title,body,created,updated}]}] } }
+const DB = {
+  getData: () => { try{return JSON.parse(localStorage.getItem('gb_data')||'{}')}catch{return{}} },
+  saveData: v => localStorage.setItem('gb_data', JSON.stringify(v)),
+  getSection: sid => { const d=DB.getData(); if(!d[sid]) d[sid]={folders:[]}; return d[sid]; },
+  saveSection: (sid,v) => { const d=DB.getData(); d[sid]=v; DB.saveData(d); },
+  getTasks: () => { try{return JSON.parse(localStorage.getItem('gb_tasks')||'[]')}catch{return[]} },
+  saveTasks: v => localStorage.setItem('gb_tasks', JSON.stringify(v)),
+  getHistory: () => { try{return JSON.parse(localStorage.getItem('gb_history')||'[]')}catch{return[]} },
+  saveHistory: v => localStorage.setItem('gb_history', JSON.stringify(v.slice(-100))),
+  getCtx() {
+    const tasks = this.getTasks().filter(t=>!t.done).slice(0,8).map(t=>`- [${t.pri}] ${t.text}`).join('\n');
+    let notes = '';
+    SECTIONS.forEach(s => {
+      const sec = this.getSection(s.id);
+      (sec.folders||[]).forEach(f => {
+        (f.files||[]).slice(0,2).forEach(fi => { notes += `[${s.label}/${f.name}] ${fi.title}: ${fi.body.slice(0,120)}\n`; });
+      });
+    });
+    const recent = this.getHistory().slice(-14).map(h=>`${h.role==='user'?'Gabriel':'Brain'}: ${h.content.slice(0,120)}`).join('\n');
+    return {tasks, notes, recent};
+  }
+};
+
+// ── STATE ──
+let currentTab = 'chat';
+let openFolders = {}; // {sectionId: Set of folderIds}
+let selectedFile = {}; // {sectionId: {folderId, fileId}}
+let taskPri = 'low';
+let folderIcon = '📁';
+let saveTimer = null;
+
+SECTIONS.forEach(s => { openFolders[s.id] = new Set(); });
+
+// ── TABS ──
+const ALL_TABS = ['chat','projetos','saude','diario','tarefas','notas','ideias','bugs','rotinas','recursos','export'];
+function setTab(t) {
+  currentTab = t;
+  ALL_TABS.forEach(x => {
+    document.getElementById('view-'+x)?.classList.toggle('active', x===t);
+    document.getElementById('tab-'+x)?.classList.toggle('active', x===t);
+  });
+  if (SECTIONS.find(s=>s.id===t)) renderExplorer(t);
+  if (t==='tarefas') renderTasks();
+}
+
+// ── EXPLORER ──
+function renderExplorer(sid) {
+  const container = document.getElementById('exp-'+sid);
+  if (!container) return;
+  const section = DB.getSection(sid);
+  const folders = section.folders || [];
+  const selFile = selectedFile[sid];
+
+  // LEFT
+  let leftHTML = '';
+  folders.forEach(folder => {
+    const isOpen = openFolders[sid].has(folder.id);
+    const files = folder.files || [];
+    leftHTML += `
+      <div class="folder-item">
+        <div class="folder-row${selFile?.folderId===folder.id&&!selFile?.fileId?' sel':''}" onclick="toggleFolder('${sid}','${folder.id}')">
+          <span class="farrow ${isOpen?'open':''}">▶</span>
+          <span class="ficon">${folder.icon||'📁'}</span>
+          <span class="fname">${esc(folder.name)}</span>
+          <span class="fcount">${files.length}</span>
+        </div>
+        <div class="subfolder-children ${isOpen?'':'closed'}">
+          ${files.map(f=>`
+            <div class="file-item${selFile?.folderId===folder.id&&selFile?.fileId===f.id?' sel':''}" onclick="openFile('${sid}','${folder.id}','${f.id}')">
+              <span class="file-icon">📄</span>
+              <span class="file-name">${esc(f.title||'Sem título')}</span>
+            </div>
+          `).join('')}
+          <button class="new-file-btn" onclick="quickNewFile('${sid}','${folder.id}')">＋ novo arquivo</button>
+        </div>
+      </div>`;
+  });
+  leftHTML += `<button class="new-folder-btn" onclick="quickNewFolder('${sid}')">📁 nova pasta</button>`;
+
+  // RIGHT
+  let rightHTML = '';
+  if (selFile?.fileId) {
+    const folder = folders.find(f=>f.id===selFile.folderId);
+    const file = folder?.files?.find(f=>f.id===selFile.fileId);
+    if (file) {
+      const date = new Date(file.updated||file.created).toLocaleString('pt-BR');
+      rightHTML = `
+        <div class="editor-top">
+          <div class="editor-breadcrumb">${folder.icon||'📁'} ${esc(folder.name)} / ${esc(file.title||'Sem título')}</div>
+          <div class="editor-actions">
+            <button class="ebtn danger" onclick="deleteFile('${sid}','${selFile.folderId}','${selFile.fileId}')">Excluir</button>
+          </div>
+        </div>
+        <input class="editor-title" id="etitle-${sid}" value="${esc(file.title||'')}" placeholder="Título..." oninput="autoSave('${sid}','${selFile.folderId}','${selFile.fileId}')"/>
+        <textarea class="editor-body" id="ebody-${sid}" placeholder="Escreva aqui..." oninput="autoSave('${sid}','${selFile.folderId}','${selFile.fileId}')">${esc(file.body||'')}</textarea>
+        <div class="editor-meta"><span>Atualizado: ${date}</span><span>${wc(file.body)} palavras</span></div>`;
+    }
+  } else {
+    const sLabel = SECTIONS.find(s=>s.id===sid)?.label || sid;
+    rightHTML = `
+      <div class="exp-empty">
+        <div class="exp-empty-icon">${SECTIONS.find(s=>s.id===sid)?.label.split(' ')[0]||'📂'}</div>
+        <div class="exp-empty-title">Selecione um arquivo</div>
+        <div class="exp-empty-sub">Escolha uma pasta à esquerda ou crie um novo arquivo.</div>
+      </div>`;
+  }
+
+  container.innerHTML = `
+    <div class="exp-left">${leftHTML}</div>
+    <div class="exp-right">${rightHTML}</div>`;
+}
+
+function toggleFolder(sid, fid) {
+  if (openFolders[sid].has(fid)) openFolders[sid].delete(fid);
+  else openFolders[sid].add(fid);
+  renderExplorer(sid);
+}
+
+function openFile(sid, folderId, fileId) {
+  selectedFile[sid] = {folderId, fileId};
+  openFolders[sid].add(folderId);
+  renderExplorer(sid);
+}
+
+function autoSave(sid, folderId, fileId) {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const title = document.getElementById('etitle-'+sid)?.value || '';
+    const body  = document.getElementById('ebody-'+sid)?.value  || '';
+    const sec = DB.getSection(sid);
+    const folder = (sec.folders||[]).find(f=>f.id===folderId);
+    if (!folder) return;
+    const file = (folder.files||[]).find(f=>f.id===fileId);
+    if (!file) return;
+    file.title = title; file.body = body; file.updated = new Date().toISOString();
+    DB.saveSection(sid, sec);
+    renderExplorer(sid);
+  }, 700);
+}
+
+function deleteFile(sid, folderId, fileId) {
+  if (!confirm('Excluir este arquivo?')) return;
+  const sec = DB.getSection(sid);
+  const folder = (sec.folders||[]).find(f=>f.id===folderId);
+  if (!folder) return;
+  folder.files = (folder.files||[]).filter(f=>f.id!==fileId);
+  DB.saveSection(sid, sec);
+  if (selectedFile[sid]?.fileId===fileId) delete selectedFile[sid];
+  renderExplorer(sid);
+  toast('Arquivo excluído','ok');
+}
+
+function quickNewFolder(sid) {
+  currentTab = sid;
+  document.getElementById('folder-section-sel').value = sid;
+  document.getElementById('folder-name-inp').value = '';
+  openModal('modal-folder');
+}
+
+function quickNewFile(sid, folderId) {
+  currentTab = sid;
+  openModal('modal-file');
+  setTimeout(() => {
+    document.getElementById('file-section-sel').value = sid;
+    populateFileFolderSel();
+    setTimeout(() => { document.getElementById('file-folder-sel').value = folderId; }, 50);
+  }, 100);
+}
+
+// ── FOLDER MODAL ──
+function setFIcon(el, icon) {
+  folderIcon = icon;
+  document.querySelectorAll('#folder-icons .icon-pill').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function saveFolder() {
+  const sid  = document.getElementById('folder-section-sel').value;
+  const name = document.getElementById('folder-name-inp').value.trim();
+  if (!name) return;
+  const sec = DB.getSection(sid);
+  const folder = {id:'f'+Date.now(), name, icon:folderIcon, files:[], created:new Date().toISOString()};
+  if (!sec.folders) sec.folders = [];
+  sec.folders.push(folder);
+  DB.saveSection(sid, sec);
+  openFolders[sid].add(folder.id);
+  closeModal('modal-folder');
+  document.getElementById('folder-name-inp').value = '';
+  if (currentTab===sid) renderExplorer(sid);
+  toast('✓ Pasta criada','ok');
+}
+
+// ── FILE MODAL ──
+function populateSectionSels() {
+  const opts = SECTIONS.map(s=>`<option value="${s.id}">${s.label}</option>`).join('');
+  document.getElementById('folder-section-sel').innerHTML = opts;
+  document.getElementById('file-section-sel').innerHTML = opts;
+  if (currentTab && SECTIONS.find(s=>s.id===currentTab)) {
+    document.getElementById('folder-section-sel').value = currentTab;
+    document.getElementById('file-section-sel').value = currentTab;
+  }
+  populateFileFolderSel();
+}
+
+function populateFileFolderSel() {
+  const sid = document.getElementById('file-section-sel').value;
+  const sec = DB.getSection(sid);
+  const folders = sec.folders || [];
+  const sel = document.getElementById('file-folder-sel');
+  sel.innerHTML = folders.length
+    ? folders.map(f=>`<option value="${f.id}">${f.icon||'📁'} ${f.name}</option>`).join('')
+    : '<option value="">— crie uma pasta primeiro —</option>';
+}
+
+function saveFile() {
+  const sid     = document.getElementById('file-section-sel').value;
+  const fid     = document.getElementById('file-folder-sel').value;
+  const title   = document.getElementById('file-title-inp').value.trim();
+  const body    = document.getElementById('file-body-inp').value.trim();
+  if (!fid || !title) { toast('Preencha título e pasta','err'); return; }
+  const sec = DB.getSection(sid);
+  const folder = (sec.folders||[]).find(f=>f.id===fid);
+  if (!folder) return;
+  const file = {id:'fi'+Date.now(), title, body, created:new Date().toISOString(), updated:new Date().toISOString()};
+  if (!folder.files) folder.files = [];
+  folder.files.push(file);
+  DB.saveSection(sid, sec);
+  closeModal('modal-file');
+  document.getElementById('file-title-inp').value='';
+  document.getElementById('file-body-inp').value='';
+  openFolders[sid].add(fid);
+  selectedFile[sid] = {folderId:fid, fileId:file.id};
+  if (currentTab===sid) renderExplorer(sid);
+  else setTab(sid);
+  toast('✓ Arquivo salvo','ok');
+}
+
+// ── TASKS ──
+function renderTasks() {
+  const tasks = DB.getTasks();
+  const wrap = document.getElementById('tasks-wrap');
+  const pending = tasks.filter(t=>!t.done);
+  const done    = tasks.filter(t=>t.done);
+
+  // group pending
+  const groups = {};
+  pending.forEach(t => {
+    const g = t.group || 'Geral';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(t);
+  });
+
+  const priO = {high:0,med:1,low:2};
+  let html = '';
+  Object.keys(groups).sort().forEach(g => {
+    const items = groups[g].sort((a,b)=>(priO[a.pri]||2)-(priO[b.pri]||2));
+    html += buildTG(g, items, tasks);
+  });
+  if (done.length) html += buildTG('✅ Concluídas', done, tasks, true);
+  wrap.innerHTML = html;
+
+  const badge = document.getElementById('tbadge');
+  badge.textContent = pending.length;
+  badge.classList.toggle('hidden', !pending.length);
+}
+
+function buildTG(name, items, all, collapsed=false) {
+  return `<div class="task-group">
+    <div class="tg-header" onclick="this.nextElementSibling.classList.toggle('closed');this.querySelector('.tg-arrow').classList.toggle('open')">
+      <span class="tg-arrow ${collapsed?'':'open'}">▶</span>${name}
+      <span class="tg-count">${items.length}</span>
+    </div>
+    <div class="tg-body ${collapsed?'closed':''}">
+      ${items.map(t=>{
+        const i=all.indexOf(t);
+        return `<div class="task-item${t.done?' done':''}" onclick="toggleTask(${i})">
+          <div class="pdot ${t.pri||'low'}"></div>
+          <div class="tcheck"></div>
+          <div class="tinfo"><div class="ttext">${t.text}</div>${t.due?`<div class="tmeta">📅 ${t.due}</div>`:''}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function toggleTask(i) {
+  const tasks=DB.getTasks(); tasks[i].done=!tasks[i].done;
+  DB.saveTasks(tasks); renderTasks();
+}
+
+function selP(p) {
+  taskPri=p;
+  ['low','med','high'].forEach(x=>document.getElementById('p'+x[0]).classList.toggle('sel',x===p));
+}
+
+function addTask() {
+  const inp=document.getElementById('tinp');
+  const text=inp.value.trim(); if(!text) return;
+  const m=text.match(/^([A-ZÀ-Ú][A-Za-zÀ-ÿ\s\-]*?)[-:]/);
+  const group = m ? m[1].trim() : 'Geral';
+  const tasks=DB.getTasks();
+  tasks.unshift({id:'t'+Date.now(),text,pri:taskPri,done:false,group,created:new Date().toISOString()});
+  DB.saveTasks(tasks); inp.value=''; selP('low'); renderTasks();
+  toast('✓ Tarefa adicionada','ok');
+}
+
+// ── CHAT ──
+function resizeTA(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+function quickSend(t){document.getElementById('inp').value=t;sendMsg();}
+
+function addMsg(role,text){
+  document.getElementById('chat-empty')?.remove();
+  const msgs=document.getElementById('messages');
+  const time=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const fmt=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\n/g,'<br>');
+  const d=document.createElement('div');d.className=`msg ${role}`;
+  d.innerHTML=`<div class="av ${role}">${role==='user'?'GS':'g'}</div><div class="msg-body"><div class="bubble">${fmt}</div><div class="ts">${time}</div></div>`;
+  msgs.appendChild(d);msgs.scrollTo({top:msgs.scrollHeight,behavior:'smooth'});
+}
+function addTyping(){
+  document.getElementById('chat-empty')?.remove();
+  const msgs=document.getElementById('messages');
+  const d=document.createElement('div');d.className='msg bot';d.id='typing';
+  d.innerHTML=`<div class="av bot">g</div><div class="msg-body"><div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>`;
+  msgs.appendChild(d);msgs.scrollTo({top:msgs.scrollHeight,behavior:'smooth'});
+}
+async function sendMsg(){
+  const inp=document.getElementById('inp'),text=inp.value.trim();
+  if(!text)return;
+  document.getElementById('sendBtn').disabled=true;
+  inp.value='';inp.style.height='auto';
+  addMsg('user',text);addTyping();
+  const history=DB.getHistory();history.push({role:'user',content:text});DB.saveHistory(history);
+  try{
+    const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:DB.getHistory().slice(-20),context:DB.getCtx()})});
+    document.getElementById('typing')?.remove();
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    addMsg('bot',data.reply);
+    history.push({role:'assistant',content:data.reply});DB.saveHistory(history);
+  }catch(e){
+    document.getElementById('typing')?.remove();
+    addMsg('bot','Erro de conexão. Tente novamente.');toast('Erro','err');
+  }
+  document.getElementById('sendBtn').disabled=false;inp.focus();
+}
+
+// ── EXPORT / IMPORT ──
+function exportMD(){
+  const d=new Date().toISOString().split('T')[0];
+  let md=`# Gabriel Brain — ${d}\n\n## Tarefas\n\n`;
+  DB.getTasks().forEach(t=>{md+=`- [${t.done?'x':' '}] [${t.pri}] ${t.text}\n`;});
+  SECTIONS.forEach(s=>{
+    const sec=DB.getSection(s.id);
+    md+=`\n## ${s.label}\n\n`;
+    (sec.folders||[]).forEach(f=>{
+      md+=`### ${f.icon||'📁'} ${f.name}\n\n`;
+      (f.files||[]).forEach(fi=>{md+=`#### ${fi.title}\n${fi.body}\n\n`;});
+    });
+  });
+  dl(`gabriel-brain-${d}.md`,md,'text/markdown');toast('✓ Export gerado!','ok');
+}
+
+function exportJSON(){
+  const data={exported:new Date().toISOString(),version:2,tasks:DB.getTasks(),sections:DB.getData()};
+  dl(`gabriel-brain-backup-${Date.now()}.json`,JSON.stringify(data,null,2),'application/json');toast('✓ Backup gerado!','ok');
+}
+
+function importJSON(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();r.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(data.tasks) DB.saveTasks(data.tasks);
+      if(data.sections) { localStorage.setItem('gb_data', JSON.stringify(data.sections)); }
+      else if(data.version!==2) importLegacy(data);
+      // re-render current
+      if(SECTIONS.find(s=>s.id===currentTab)) renderExplorer(currentTab);
+      renderTasks();
+      toast('✓ Dados importados!','ok');
+    }catch(err){toast('Arquivo inválido','err');}
+  };r.readAsText(file);e.target.value='';
+}
+
+function importLegacy(data){
+  // Convert old flat format → sections
+  const d = DB.getData();
+  const ensure = (sid,name,icon) => {
+    if(!d[sid]) d[sid]={folders:[]};
+    let f=d[sid].folders.find(x=>x.name===name);
+    if(!f){f={id:'f'+Date.now()+Math.random().toString(36).slice(2),name,icon,files:[],created:new Date().toISOString()};d[sid].folders.push(f);}
+    return f;
+  };
+  const addFile=(folder,title,body,created)=>{
+    folder.files.push({id:'fi'+Date.now()+Math.random().toString(36).slice(2),title,body:body||'',created:created||new Date().toISOString(),updated:created||new Date().toISOString()});
+  };
+  if(data.notes)    { const f=ensure('notas','Notas','📝');     data.notes.forEach(n=>addFile(f,n.title,n.content,n.created)); }
+  if(data.ideas)    { const f=ensure('ideias','Ideias','💡');   data.ideas.forEach(n=>addFile(f,(n.tag?`[${n.tag}] `:'')+n.text.slice(0,60),n.text,n.created)); }
+  if(data.diary)    { const f=ensure('diario','Diário','📖');   data.diary.forEach(n=>addFile(f,new Date(n.created).toLocaleDateString('pt-BR'),n.text,n.created)); }
+  if(data.projects) { const f=ensure('projetos','Projetos','🚀'); data.projects.forEach(n=>addFile(f,n.name,`Status: ${n.status}\n\n${n.desc}`,n.created)); }
+  localStorage.setItem('gb_data', JSON.stringify(d));
+}
+
+function clearAll(){
+  if(!confirm('Apagar todos os dados?'))return;
+  localStorage.removeItem('gb_data');localStorage.removeItem('gb_tasks');localStorage.removeItem('gb_history');
+  renderTasks();SECTIONS.forEach(s=>{if(currentTab===s.id)renderExplorer(s.id);});
+  toast('Dados apagados','ok');
+}
+function dl(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();}
+
+// ── MODAL HELPERS ──
+function openModal(id){
+  if(id==='modal-folder'||id==='modal-file') populateSectionSels();
+  document.getElementById(id).classList.add('show');
+  setTimeout(()=>{const i=document.querySelector(`#${id} input`);if(i)i.focus();},150);
+}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function closeOut(e,id){if(e.target.id===id)closeModal(id);}
+
+// ── UTILS ──
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function wc(s){return (s||'').trim().split(/\s+/).filter(Boolean).length;}
+function toast(msg,type=''){
+  const t=document.getElementById('toast');t.textContent=msg;t.className=`toast show ${type}`;
+  setTimeout(()=>t.className='toast',2800);
+}
+
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',()=>{
+    document.body.style.height=window.visualViewport.height+'px';
+    const m=document.getElementById('messages');if(m)m.scrollTo({top:m.scrollHeight});
+  });
+}
+
+// ── INIT ──
+renderTasks();
+</script>
+</body>
+</html>
