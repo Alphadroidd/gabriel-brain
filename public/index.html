@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Gabriel"/>
+  <meta name="theme-color" content="#080810"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <title>Gabriel Brain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #080810;
+      --bg2: #0f0f1a;
+      --bg3: #161625;
+      --surface: rgba(15,15,26,0.97);
+      --border: rgba(255,255,255,0.06);
+      --border2: rgba(255,255,255,0.1);
+      --text: #f0f0f5;
+      --text2: #8888aa;
+      --text3: #44445a;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+      --green: #34d399;
+      --red: #f87171;
+      --amber: #fbbf24;
+      --font: 'Instrument Sans', sans-serif;
+      --serif: 'Instrument Serif', serif;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100svh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      inset: 0;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(var(--safe-top) + 12px) 18px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .logo {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .logo-name {
+      font-family: var(--serif);
+      font-size: 20px;
+      font-style: italic;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+
+    .logo-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: breathe 3s ease-in-out infinite;
+      flex-shrink: 0;
+      align-self: center;
+    }
+
+    @keyframes breathe {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mode-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .mode-btn:active { transform: scale(0.95); }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      gap: 0;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text3);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .tab.active {
+      color: var(--accent2);
+      border-bottom-color: var(--accent2);
+    }
+
+    .tab-badge {
+      background: var(--accent);
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+      border-radius: 10px;
+      padding: 1px 5px;
+      min-width: 16px;
+      text-align: center;
+    }
+
+    /* ── MAIN CONTENT ── */
+    .content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── CHAT VIEW ── */
+    .chat-view {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    .messages::-webkit-scrollbar { display: none; }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      text-align: center;
+      padding: 40px 32px;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    .empty-glyph {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 48px;
+      color: var(--text3);
+      line-height: 1;
+    }
+
+    .empty-title {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 22px;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+
+    .empty-sub {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.6;
+      max-width: 260px;
+    }
+
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .suggestion {
+      padding: 7px 13px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .suggestion:active { background: var(--accent); color: white; border-color: var(--accent); }
+
+    /* Messages */
+    .msg {
+      display: flex;
+      gap: 10px;
+      animation: msgIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    @keyframes msgIn { from{opacity:0;transform:translateY(8px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+    .msg.user { flex-direction: row-reverse; }
+
+    .av {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .av.bot {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 13px;
+      color: var(--accent2);
+    }
+
+    .av.user {
+      background: var(--accent);
+      color: white;
+      font-family: var(--font);
+    }
+
+    .msg-body { max-width: calc(100% - 42px); display: flex; flex-direction: column; gap: 3px; }
+    .msg.user .msg-body { align-items: flex-end; }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      letter-spacing: -0.1px;
+    }
+
+    .msg.bot .bubble {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-top-left-radius: 4px;
+      color: var(--text);
+    }
+
+    .msg.user .bubble {
+      background: var(--accent);
+      border-top-right-radius: 4px;
+      color: white;
+    }
+
+    .bubble strong { font-weight: 600; }
+    .bubble code { font-size: 12px; background: rgba(0,0,0,0.3); padding: 2px 5px; border-radius: 4px; }
+
+    .ts { font-size: 10px; color: var(--text3); padding: 0 4px; }
+    .msg.user .ts { text-align: right; }
+
+    .saved-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--green);
+      background: rgba(52,211,153,0.1);
+      border: 1px solid rgba(52,211,153,0.2);
+      border-radius: 10px;
+      padding: 3px 8px;
+      margin-top: 3px;
+      font-weight: 500;
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 12px 14px;
+      align-items: center;
+    }
+
+    .typing-indicator span {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--text3);
+      animation: bounce 1.2s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0);opacity:0.4} 30%{transform:translateY(-5px);opacity:1} }
+
+    /* ── INPUT ── */
+    .input-wrap {
+      padding: 10px 16px calc(var(--safe-bottom) + 10px);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 8px 8px 8px 16px;
+      transition: border-color 0.2s;
+    }
+
+    .input-row:focus-within {
+      border-color: rgba(99,102,241,0.4);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
+    }
+
+    textarea {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 15px;
+      resize: none;
+      max-height: 100px;
+      line-height: 1.45;
+      -webkit-appearance: none;
+    }
+
+    textarea::placeholder { color: var(--text3); }
+
+    .send-btn {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .send-btn:active { transform: scale(0.88); }
+    .send-btn:disabled { opacity: 0.3; }
+    .send-btn svg { width: 14px; height: 14px; fill: white; }
+
+    /* ── TASKS VIEW ── */
+    .tasks-view, .notes-view {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tasks-view::-webkit-scrollbar, .notes-view::-webkit-scrollbar { display: none; }
+
+    .section-title {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 13px;
+      color: var(--text2);
+      margin-bottom: 10px;
+      margin-top: 20px;
+      letter-spacing: 0.05em;
+    }
+
+    .section-title:first-child { margin-top: 0; }
+
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .task-item:active { transform: scale(0.98); }
+    .task-item.done { opacity: 0.4; }
+
+    .task-check {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--border2);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+      transition: all 0.2s;
+    }
+
+    .task-item.done .task-check {
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    .task-check::after {
+      content: '';
+      width: 5px; height: 9px;
+      border: 2px solid white;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg) translateY(-1px);
+      display: none;
+    }
+
+    .task-item.done .task-check::after { display: block; }
+
+    .task-text { font-size: 14px; line-height: 1.5; flex: 1; }
+    .task-item.done .task-text { text-decoration: line-through; }
+
+    .task-meta {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 3px;
+    }
+
+    .priority-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 6px;
+    }
+
+    .priority-high { background: var(--red); }
+    .priority-med { background: var(--amber); }
+    .priority-low { background: var(--green); }
+
+    /* ── NOTES VIEW ── */
+    .note-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .note-card:active { transform: scale(0.98); }
+
+    .note-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+
+    .note-preview {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .note-date {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 8px;
+    }
+
+    /* ── ADD BUTTON ── */
+    .fab {
+      position: fixed;
+      bottom: calc(var(--safe-bottom) + 80px);
+      right: 20px;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+      transition: all 0.2s;
+      z-index: 50;
+    }
+
+    .fab:active { transform: scale(0.92); }
+    .fab svg { width: 20px; height: 20px; fill: white; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal-overlay.hidden { display: none; }
+
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 20px 20px 0 0;
+      padding: 20px 20px calc(var(--safe-bottom) + 20px);
+      width: 100%;
+      animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+
+    .modal-handle {
+      width: 36px; height: 4px;
+      background: var(--border2);
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+
+    .modal-title {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 18px;
+      margin-bottom: 14px;
+      color: var(--text);
+    }
+
+    .modal-input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 15px;
+      outline: none;
+      margin-bottom: 10px;
+    }
+
+    .modal-input:focus { border-color: rgba(99,102,241,0.4); }
+    .modal-textarea { min-height: 80px; resize: none; }
+
+    .modal-row { display: flex; gap: 8px; margin-bottom: 14px; }
+
+    .priority-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border2);
+      background: var(--bg3);
+      color: var(--text2);
+      font-family: var(--font);
+      font-size: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .priority-btn.selected { border-color: var(--accent); color: var(--accent2); background: rgba(99,102,241,0.1); }
+
+    .modal-actions { display: flex; gap: 8px; }
+
+    .btn-primary {
+      flex: 1;
+      padding: 13px;
+      background: var(--accent);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary {
+      padding: 13px 20px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      color: var(--text2);
+      font-family: var(--font);
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--safe-bottom) + 80px);
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 9px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 200;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.ok { color: var(--green); }
+    .toast.err { color: var(--red); }
+
+    /* Hidden */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <span class="logo-name">Gabriel</span>
+    <div class="logo-dot"></div>
+  </div>
+  <div class="header-right">
+    <button class="mode-btn active" id="exportBtn" onclick="exportToObsidian()">↓ Export</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('chat')" id="tab-chat">💬 Chat</div>
+  <div class="tab" onclick="switchTab('tasks')" id="tab-tasks">✓ Tarefas <span class="tab-badge" id="tasks-badge">0</span></div>
+  <div class="tab" onclick="switchTab('notes')" id="tab-notes">📝 Notas</div>
+</div>
+
+<div class="content">
+
+  <!-- CHAT -->
+  <div class="chat-view" id="view-chat">
+    <div class="messages" id="messages">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-glyph">g</div>
+        <div class="empty-title">Olá, Gabriel</div>
+        <div class="empty-sub">Seu assistente pessoal. Me conta o que está na sua cabeça.</div>
+        <div class="suggestions">
+          <div class="suggestion" onclick="quickSend('O que tenho pendente hoje?')">📅 Pendências</div>
+          <div class="suggestion" onclick="quickSend('Como estou me sentindo ultimamente?')">💭 Reflexão</div>
+          <div class="suggestion" onclick="quickSend('Qual o status dos meus projetos?')">🚀 Projetos</div>
+          <div class="suggestion" onclick="quickSend('Me ajuda a organizar meu dia')">🗓 Organizar dia</div>
+        </div>
+      </div>
+    </div>
+    <div class="input-wrap">
+      <div class="input-row">
+        <textarea id="inp" placeholder="Escreva algo..." rows="1" 
+          onkeydown="handleKey(event)" oninput="resizeTA(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMsg()">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASKS -->
+  <div class="tasks-view hidden" id="view-tasks">
+    <div class="section-title">Pendentes</div>
+    <div id="tasks-pending"></div>
+    <div class="section-title">Concluídas</div>
+    <div id="tasks-done"></div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="notes-view hidden" id="view-notes">
+    <div id="notes-list"></div>
+  </div>
+
+</div>
+
+<!-- FAB -->
+<button class="fab hidden" id="fab" onclick="openModal()">
+  <svg viewBox="0 0 24 24"><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"/></svg>
+</button>
+
+<!-- MODAL TASK -->
+<div class="modal-overlay hidden" id="modal-task">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nova tarefa</div>
+    <input class="modal-input" id="task-text" placeholder="O que precisa fazer?" type="text" 
+      onkeydown="if(event.key==='Enter') saveTask()"/>
+    <input class="modal-input" id="task-due" placeholder="Prazo (opcional)" type="text"/>
+    <div class="modal-row">
+      <button class="priority-btn selected" id="pri-low" onclick="setPriority('low')">🟢 Baixa</button>
+      <button class="priority-btn" id="pri-med" onclick="setPriority('med')">🟡 Média</button>
+      <button class="priority-btn" id="pri-high" onclick="setPriority('high')">🔴 Alta</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-task')">Cancelar</button>
+      <button class="btn-primary" onclick="saveTask()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOTE -->
+<div class="modal-overlay hidden" id="modal-note">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nova nota</div>
+    <input class="modal-input" id="note-title" placeholder="Título" type="text"/>
+    <textarea class="modal-input modal-textarea" id="note-content" placeholder="Conteúdo..."></textarea>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-note')">Cancelar</button>
+      <button class="btn-primary" onclick="saveNote()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──
+const API = '/api/chat';
+let chatHistory = [];
+let currentTab = 'chat';
+let taskPriority = 'low';
+
+// ── DB (localStorage como fallback até ter D1) ──
+const DB = {
+  getTasks() { return JSON.parse(localStorage.getItem('gb_tasks') || '[]'); },
+  saveTasks(t) { localStorage.setItem('gb_tasks', JSON.stringify(t)); },
+  getNotes() { return JSON.parse(localStorage.getItem('gb_notes') || '[]'); },
+  saveNotes(n) { localStorage.setItem('gb_notes', JSON.stringify(n)); },
+  getHistory() { return JSON.parse(localStorage.getItem('gb_history') || '[]'); },
+  saveHistory(h) { localStorage.setItem('gb_history', JSON.stringify(h.slice(-100))); },
+  getContext() {
+    const tasks = this.getTasks().filter(t => !t.done).slice(0, 10)
+      .map(t => `- [${t.priority}] ${t.text}${t.due ? ` (prazo: ${t.due})` : ''}`).join('\n');
+    const notes = this.getNotes().slice(0, 5)
+      .map(n => `### ${n.title}\n${n.content.slice(0, 300)}`).join('\n\n');
+    const recent = this.getHistory().slice(-20)
+      .map(h => `${h.role === 'user' ? 'Gabriel' : 'Mybrain'}: ${h.content.slice(0, 200)}`).join('\n');
+    return { tasks, notes, recent };
+  }
+};
+
+// ── TABS ──
+function switchTab(tab) {
+  currentTab = tab;
+  ['chat','tasks','notes'].forEach(t => {
+    document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tab);
+    document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+  });
+  const fab = document.getElementById('fab');
+  fab.classList.toggle('hidden', tab === 'chat');
+  if (tab === 'tasks') renderTasks();
+  if (tab === 'notes') renderNotes();
+}
+
+// ── TASKS ──
+function renderTasks() {
+  const tasks = DB.getTasks();
+  const pending = tasks.filter(t => !t.done);
+  const done = tasks.filter(t => t.done);
+  document.getElementById('tasks-badge').textContent = pending.length;
+  
+  document.getElementById('tasks-pending').innerHTML = pending.length ? 
+    pending.map((t,i) => taskHTML(t, tasks.indexOf(t))).join('') :
+    '<div style="color:var(--text3);font-size:13px;padding:10px 0">Nenhuma tarefa pendente 🎉</div>';
+  
+  document.getElementById('tasks-done').innerHTML = done.slice(0,5).map((t,i) => taskHTML(t, tasks.indexOf(t))).join('');
+}
+
+function taskHTML(t, idx) {
+  return `<div class="task-item ${t.done?'done':''}" onclick="toggleTask(${idx})">
+    <div class="priority-dot priority-${t.priority||'low'}"></div>
+    <div class="task-check"></div>
+    <div>
+      <div class="task-text">${t.text}</div>
+      ${t.due ? `<div class="task-meta">📅 ${t.due}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function toggleTask(idx) {
+  const tasks = DB.getTasks();
+  tasks[idx].done = !tasks[idx].done;
+  DB.saveTasks(tasks);
+  renderTasks();
+}
+
+function setPriority(p) {
+  taskPriority = p;
+  ['low','med','high'].forEach(x => document.getElementById(`pri-${x}`).classList.toggle('selected', x === p));
+}
+
+function saveTask() {
+  const text = document.getElementById('task-text').value.trim();
+  const due = document.getElementById('task-due').value.trim();
+  if (!text) return;
+  const tasks = DB.getTasks();
+  tasks.unshift({ id: Date.now(), text, due, priority: taskPriority, done: false, created: new Date().toISOString() });
+  DB.saveTasks(tasks);
+  closeModal('modal-task');
+  renderTasks();
+  toast('✓ Tarefa salva', 'ok');
+}
+
+// ── NOTES ──
+function renderNotes() {
+  const notes = DB.getNotes();
+  document.getElementById('notes-list').innerHTML = notes.length ?
+    notes.map(n => `<div class="note-card">
+      <div class="note-title">${n.title}</div>
+      <div class="note-preview">${n.content}</div>
+      <div class="note-date">${new Date(n.created).toLocaleDateString('pt-BR')}</div>
+    </div>`).join('') :
+    '<div style="color:var(--text3);font-size:13px;padding:10px 0">Nenhuma nota ainda</div>';
+}
+
+function saveNote() {
+  const title = document.getElementById('note-title').value.trim();
+  const content = document.getElementById('note-content').value.trim();
+  if (!title) return;
+  const notes = DB.getNotes();
+  notes.unshift({ id: Date.now(), title, content, created: new Date().toISOString() });
+  DB.saveNotes(notes);
+  closeModal('modal-note');
+  renderNotes();
+  toast('✓ Nota salva', 'ok');
+}
+
+// ── MODAL ──
+function openModal() {
+  if (currentTab === 'tasks') {
+    document.getElementById('task-text').value = '';
+    document.getElementById('task-due').value = '';
+    setPriority('low');
+    document.getElementById('modal-task').classList.remove('hidden');
+    setTimeout(() => document.getElementById('task-text').focus(), 100);
+  } else {
+    document.getElementById('note-title').value = '';
+    document.getElementById('note-content').value = '';
+    document.getElementById('modal-note').classList.remove('hidden');
+    setTimeout(() => document.getElementById('note-title').focus(), 100);
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+// ── CHAT ──
+function resizeTA(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+}
+
+function quickSend(text) {
+  document.getElementById('inp').value = text;
+  sendMsg();
+}
+
+function addMsg(role, text, saved) {
+  document.getElementById('empty-state')?.remove();
+  const msgs = document.getElementById('messages');
+  const time = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const formatted = text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\n/g, '<br/>');
+  const badge = saved ? `<div class="saved-pill">✓ ${saved}</div>` : '';
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `
+    <div class="av ${role}">${role==='user'?'GS':'g'}</div>
+    <div class="msg-body">
+      <div class="bubble">${formatted}</div>
+      ${badge}
+      <div class="ts">${time}</div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTo({top: msgs.scrollHeight, behavior: 'smooth'});
+}
+
+function addTyping() {
+  document.getElementById('empty-state')?.remove();
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot'; div.id = 'typing';
+  div.innerHTML = `<div class="av bot">g</div><div class="msg-body"><div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTo({top: msgs.scrollHeight, behavior: 'smooth'});
+}
+
+async function sendMsg() {
+  const inp = document.getElementById('inp');
+  const text = inp.value.trim();
+  if (!text) return;
+  document.getElementById('sendBtn').disabled = true;
+  inp.value = ''; inp.style.height = 'auto';
+
+  addMsg('user', text);
+  addTyping();
+
+  // Salva no histórico local
+  const history = DB.getHistory();
+  history.push({role: 'user', content: text});
+  DB.saveHistory(history);
+
+  // Detecta tarefas na mensagem
+  if (/^(lembr|tarefa|fazer|pendente|add tarefa)/i.test(text)) {
+    const tasks = DB.getTasks();
+    tasks.unshift({ id: Date.now(), text: text.replace(/^(lembr(a|e|ar)\s*(de|que|disso)?\s*|tarefa:\s*|fazer:\s*)/i, ''), priority: 'med', done: false, created: new Date().toISOString() });
+    DB.saveTasks(tasks);
+    document.getElementById('tasks-badge').textContent = tasks.filter(t=>!t.done).length;
+  }
+
+  try {
+    const ctx = DB.getContext();
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        message: text,
+        history: DB.getHistory().slice(-20),
+        context: ctx
+      })
+    });
+
+    document.getElementById('typing')?.remove();
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    addMsg('bot', data.reply, data.saved);
+    if (data.saved) toast('✓ ' + data.saved, 'ok');
+    if (data.task) {
+      const tasks = DB.getTasks();
+      tasks.unshift({...data.task, id: Date.now(), done: false, created: new Date().toISOString()});
+      DB.saveTasks(tasks);
+      document.getElementById('tasks-badge').textContent = tasks.filter(t=>!t.done).length;
+    }
+
+    history.push({role: 'assistant', content: data.reply});
+    DB.saveHistory(history);
+    chatHistory = DB.getHistory().slice(-20).map(h => ({role: h.role, content: h.content}));
+
+  } catch(e) {
+    document.getElementById('typing')?.remove();
+    addMsg('bot', 'Não consegui conectar. Tente novamente.');
+    toast('Erro de conexão', 'err');
+  }
+
+  document.getElementById('sendBtn').disabled = false;
+  inp.focus();
+}
+
+// ── EXPORT ──
+function exportToObsidian() {
+  const tasks = DB.getTasks();
+  const notes = DB.getNotes();
+  const date = new Date().toISOString().split('T')[0];
+  
+  let md = `# Export Gabriel Brain — ${date}\n\n`;
+  md += `## Tarefas\n\n`;
+  tasks.forEach(t => { md += `- [${t.done?'x':' '}] ${t.text}${t.due?` (${t.due})`:''} [${t.priority}]\n`; });
+  md += `\n## Notas\n\n`;
+  notes.forEach(n => { md += `### ${n.title}\n${n.content}\n\n`; });
+
+  const blob = new Blob([md], {type: 'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `gabriel-brain-${date}.md`;
+  a.click();
+  toast('✓ Export gerado!', 'ok');
+}
+
+// ── TOAST ──
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ── iOS KEYBOARD FIX ──
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => {
+    document.body.style.height = window.visualViewport.height + 'px';
+    const msgs = document.getElementById('messages');
+    if (msgs) msgs.scrollTo({top: msgs.scrollHeight});
+  });
+}
+
+// ── INIT ──
+document.getElementById('tasks-badge').textContent = DB.getTasks().filter(t=>!t.done).length;
+</script>
+</body>
+</html>
