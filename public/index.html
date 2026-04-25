@@ -11,7 +11,7 @@
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import { getFirestore, doc, setDoc, onSnapshot }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -31,6 +31,18 @@
     let uid = null;
     let unsubSnap = null;
     let syncTimer = null;
+
+    // Handle redirect result on mobile after Google login
+    getRedirectResult(auth).then(result => {
+      if (result?.user) {
+        // onAuthStateChanged will handle the rest
+        console.log('Redirect login OK:', result.user.displayName);
+      }
+    }).catch(e => {
+      if (e.code !== 'auth/cancelled-popup-request') {
+        console.error('Redirect error:', e);
+      }
+    });
 
     // Firestore → localStorage → UI
     function startSync(userId) {
@@ -91,8 +103,14 @@
       const btn = document.getElementById('login-btn');
       btn.disabled = true;
       btn.innerHTML = '<span>Entrando...</span>';
+      const provider = new GoogleAuthProvider();
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       try {
-        await signInWithPopup(auth, new GoogleAuthProvider());
+        if (isMobile) {
+          await signInWithRedirect(auth, provider);
+        } else {
+          await signInWithPopup(auth, provider);
+        }
       } catch(e) {
         btn.disabled = false;
         btn.innerHTML = '<img class="gicon" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/> Entrar com Google';
@@ -310,7 +328,7 @@
 <body>
 
 <div id="login-screen">
-  <div class="lg-logo">g</div>
+  <img src="/icon-192.png" style="width:68px;height:68px;border-radius:18px;margin-bottom:4px"/>
   <div class="lg-title">Gabriel Brain</div>
   <div class="lg-sub">Seu segundo cérebro pessoal. Faça login para sincronizar em todos os dispositivos.</div>
   <button id="login-btn" onclick="doGoogleLogin()">
